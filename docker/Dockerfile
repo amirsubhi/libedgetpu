@@ -48,6 +48,15 @@ RUN apt-get update \
       software-properties-common \
       $(grep Ubuntu /etc/os-release > /dev/null && echo vim-common || echo xxd)
 
+# Trixie == Debian 13
+RUN if grep 'Trixie' /etc/os-release > /dev/null; then \
+      DEBIAN_FRONTEND=noninteractive apt-get install -y \
+        binutils-gold \
+        binutils-aarch64-linux-gnu \
+        binutils-arm-linux-gnueabihf \
+      && export TF_PYTHON_VERSION=3.13; \
+    fi
+
 # Bionic Beaver == Ubuntu 18.04
 RUN if grep 'Bionic Beaver' /etc/os-release > /dev/null; then \
       add-apt-repository ppa:ubuntu-toolchain-r/test \

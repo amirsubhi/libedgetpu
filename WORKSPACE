@@ -42,12 +42,11 @@ load("@rules_python//python:repositories.bzl", "py_repositories")
 py_repositories()
 
 load("@rules_python//python:repositories.bzl", "python_register_toolchains")
-load(
-    "@org_tensorflow//tensorflow/tools/toolchains/python:python_repo.bzl",
-    "python_repository",
-)
 
-python_repository(name = "python_version_repo")
+local_repository(
+    name = "python_version_repo",
+    path = "local_repo/python_version_repo",
+)
 
 load("@python_version_repo//:py_version.bzl", "HERMETIC_PYTHON_VERSION")
 

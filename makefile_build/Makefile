@@ -22,7 +22,7 @@ LIBEDGETPU_CFLAGS := \
 LIBEDGETPU_CXXFLAGS := \
 	-fPIC \
 	-Wall \
-	-std=c++14 \
+	-std=c++17 \
 	-DDARWINN_PORT_DEFAULT
 
 LIBEDGETPU_LDFLAGS := \
