@@ -31,8 +31,9 @@ LIBEDGETPU_LDFLAGS := \
 	-Wl,--soname,libedgetpu.so.1 \
 	-Wl,--version-script=$(BUILDROOT)/tflite/public/libedgetpu.lds \
 	-fuse-ld=gold \
-	-lflatbuffers \
-	-labsl_flags \
+	/usr/local/lib/libflatbuffers.a \
+	-labsl_flags_commandlineflag \
+	-labsl_flags_config \
 	-labsl_flags_internal \
 	-labsl_flags_reflection \
 	-labsl_flags_marshalling \
@@ -56,11 +57,12 @@ LIBEDGETPU_INCLUDES := \
 	$(BUILDROOT) \
 	$(TFROOT) \
 	$(BUILDDIR) \
-	$(BUILDDIR)/$(BUILDROOT)
+	$(BUILDDIR)/$(BUILDROOT) \
+	/usr/local/include
 LIBEDGETPU_INCLUDES := $(addprefix -I,$(LIBEDGETPU_INCLUDES))
 
-LIBEDGETPU_CSRCS := $(TFROOT)/tensorflow/lite/c/common.c
-LIBEDGETPU_COBJS := $(call TOBUILDDIR,$(patsubst %.c,%.o,$(LIBEDGETPU_CSRCS)))
+LIBEDGETPU_CSRCS := $(TFROOT)/tensorflow/lite/c/common_internal.cc
+LIBEDGETPU_COBJS := $(call TOBUILDDIR,$(patsubst %.cc,%.o,$(LIBEDGETPU_CSRCS)))
 
 LIBEDGETPU_CCSRCS := \
 	$(BUILDROOT)/api/allocated_buffer.cc \
@@ -181,10 +183,10 @@ firmware:
 	@echo "} // namespace" >> $(LIBEDGETPU_FW_OUTPUT)
 
 
-$(LIBEDGETPU_COBJS) : $(BUILDDIR)/%.o: %.c
+$(LIBEDGETPU_COBJS) : $(BUILDDIR)/%.o: %.cc
 	@$(MKDIR)
 	@echo "Compiling $<"
-	@$(CC) $(LIBEDGETPU_CFLAGS) $(LIBEDGETPU_INCLUDES) -c $< -MD -MT $@ -MF $(@:%o=%d) -o $@
+	@$(CXX) $(LIBEDGETPU_CXXFLAGS) $(LIBEDGETPU_INCLUDES) -c $< -MD -MT $@ -MF $(@:%o=%d) -o $@
 
 $(LIBEDGETPU_CCOBJS) : $(BUILDDIR)/%.o: %.cc
 	@$(MKDIR)
