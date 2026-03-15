@@ -23,6 +23,7 @@ Build Linux binaries inside Docker container (works on Linux and macOS):
 ```
 DOCKER_CPUS="k8" DOCKER_IMAGE="ubuntu:22.04" DOCKER_TARGETS=libedgetpu make docker-build
 DOCKER_CPUS="armv7a aarch64" DOCKER_IMAGE="debian:bookworm" DOCKER_TARGETS=libedgetpu make docker-build
+DOCKER_CPUS="k8 armv7a aarch64" DOCKER_IMAGE="debian:trixie" DOCKER_TARGETS=libedgetpu make docker-build
 ```
 
 All built binaries go to the `out` directory. Note that the bazel-* are not copied to the host from the Docker container.
@@ -35,9 +36,9 @@ debuild -us -uc -tc -b -a amd64 -d
 ```
 
 ### Bazel
-The version of `bazel` needs to be the same as that recommended for the corresponding version of tensorflow. For example, it requires `Bazel 6.5.0` to compile TF 2.16.1.
+The version of `bazel` needs to be the same as that recommended for the corresponding version of tensorflow. For example, it requires `Bazel 6.5.0` to compile TF 2.19.1.
 
-Current version of tensorflow supported is `2.16.1`.
+Current version of tensorflow supported is `2.19.1`.
 
 Build native binaries on Linux and macOS:
 ```
@@ -75,23 +76,42 @@ Repeat compilation.
 
 ### Makefile
 
-If only building for native systems, it is possible to significantly reduce the complexity of the build by removing Bazel (and Docker). This simple approach builds only what is needed, removes build-time depenency fetching, increases the speed, and uses upstream Debian packages.
+If only building for native systems, it is possible to significantly reduce the complexity of the build by removing Bazel (and Docker). This simple approach builds only what is needed, removes build-time dependency fetching, increases the speed, and uses upstream packages.
 
-To prepare your system, you'll need the following packages (both available on Debian Bookworm, Bullseye or Buster-Backports):
+TF 2.19.1 requires **FlatBuffers 24.3.25**, which is newer than what most distros ship. Build and install it from source first:
 ```
-sudo apt install libabsl-dev libflatbuffers-dev
+git clone --depth=1 --branch v24.3.25 https://github.com/google/flatbuffers /tmp/flatbuffers
+cmake -S /tmp/flatbuffers -B /tmp/flatbuffers/build \
+  -DCMAKE_INSTALL_PREFIX=/usr/local \
+  -DFLATBUFFERS_BUILD_TESTS=OFF \
+  -DCMAKE_BUILD_TYPE=Release
+cmake --build /tmp/flatbuffers/build -j$(nproc)
+sudo cmake --install /tmp/flatbuffers/build
+sudo cp -r /tmp/flatbuffers/include/flatbuffers /usr/local/include/
 ```
 
-Next, you'll need to clone the [Tensorflow Repo](https://github.com/tensorflow/tensorflow) at the desired checkout (using TF head isn't advised). If you are planning to use libcoral or pycoral libraries, this should match the ones in those repos' WORKSPACE files. For example, if you are using TF2.15, we can check that [tag in the TF Repo](https://github.com/tensorflow/tensorflow/tree/r2.15) get the latest commit for that stable release and then checkout that address:
+Then install the remaining dependencies (available on Debian Bookworm/Trixie or Ubuntu 22.04+):
 ```
-git clone https://github.com/tensorflow/tensorflow
-git checkout v2.16.1
+sudo apt install libabsl-dev libusb-1.0-0-dev xxd
+```
+
+Next, clone the [TensorFlow repo](https://github.com/tensorflow/tensorflow) at the matching tag:
+```
+git clone --depth=1 --branch v2.19.1 https://github.com/tensorflow/tensorflow
 ```
 
 To build the library:
 ```
 TFROOT=<Directory of Tensorflow> make -f makefile_build/Makefile -j$(nproc) libedgetpu
 ```
+
+#### Debian 13 (Trixie) / Ubuntu 24.04 notes
+
+On these systems `libabsl_flags` is split into sub-libraries. The Makefile already handles this automatically. No extra steps are needed beyond the instructions above.
+
+Built libraries are placed in:
+- `out/direct/k8/libedgetpu.so.1.0` — maximum operating frequency
+- `out/throttled/k8/libedgetpu.so.1.0` — reduced operating frequency
 
 ## Support
 
